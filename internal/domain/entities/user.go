@@ -1,4 +1,4 @@
-package models
+package entities
 
 import (
 	"time"
@@ -23,7 +23,7 @@ type AddressResponse struct {
 	Zipcode string `json:"zipcode" bson:"zipcode"`
 }
 
-type ProcessedData struct {
+type ProcessedUser struct {
 	ID            primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	UserData      UserData           `json:"user_data" bson:"user_data"`
 	DocumentValid bool               `json:"document_valid" bson:"document_valid"`

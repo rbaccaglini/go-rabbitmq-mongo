@@ -1,0 +1,64 @@
+package main
+
+import (
+	"log"
+
+	"github.com/gin-gonic/gin"
+
+	"api-rabbitmq/internal/application/services"
+	"api-rabbitmq/internal/application/usecases"
+	"api-rabbitmq/internal/domain/repositories"
+	"api-rabbitmq/internal/infrastructure/database/mongodb"
+	"api-rabbitmq/internal/infrastructure/http/handlers"
+	"api-rabbitmq/internal/infrastructure/messagebroker/rabbitmq"
+	"api-rabbitmq/internal/interfaces/api"
+)
+
+func main() {
+	// Configurações
+	mongoURI := "mongodb://admin:password@localhost:27017"
+	rabbitMQURL := "amqp://admin:password@localhost:5672/"
+
+	// Inicializar repositório
+	var userRepo repositories.UserRepository
+	userRepo, err := mongodb.NewUserRepository(mongoURI)
+	if err != nil {
+		log.Printf("Warning: MongoDB not available: %v", err)
+		userRepo = nil
+	} else {
+		defer userRepo.Close()
+	}
+
+	// Inicializar serviços externos
+	extServices := services.NewExternalServices()
+
+	// Inicializar use case
+	userUseCase := usecases.NewUserUseCase(userRepo, extServices)
+
+	// Inicializar RabbitMQ
+	rabbitMQService, err := rabbitmq.NewRabbitMQService(rabbitMQURL, userUseCase)
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+	defer rabbitMQService.Close()
+
+	// Iniciar consumo de mensagens
+	go func() {
+		if err := rabbitMQService.ConsumeMessages(); err != nil {
+			log.Fatalf("Failed to start consuming messages: %v", err)
+		}
+	}()
+
+	// Inicializar handlers
+	userHandler := handlers.NewUserHandler(userUseCase, rabbitMQService)
+
+	// Configurar router
+	router := gin.Default()
+	api.SetupRoutes(router, userHandler)
+
+	// Iniciar servidor
+	log.Println("Server starting on :8080")
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}
