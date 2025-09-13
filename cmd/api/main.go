@@ -7,7 +7,7 @@ import (
 
 	"api-rabbitmq/internal/application/services"
 	"api-rabbitmq/internal/application/usecases"
-	"api-rabbitmq/internal/domain/repositories"
+	"api-rabbitmq/internal/infrastructure/config"
 	"api-rabbitmq/internal/infrastructure/database/mongodb"
 	"api-rabbitmq/internal/infrastructure/http/handlers"
 	"api-rabbitmq/internal/infrastructure/messagebroker/rabbitmq"
@@ -15,13 +15,19 @@ import (
 )
 
 func main() {
-	// Configurações
-	mongoURI := "mongodb://admin:password@localhost:27017"
-	rabbitMQURL := "amqp://admin:password@localhost:5672/"
+	// Carregar configurações
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Validar configurações
+	if err := cfg.Database.Validate(); err != nil {
+		log.Printf("Warning: Database configuration error: %v", err)
+	}
 
 	// Inicializar repositório
-	var userRepo repositories.UserRepository
-	userRepo, err := mongodb.NewUserRepository(mongoURI)
+	userRepo, err := mongodb.NewUserRepository(cfg.Database.GetConnectionString())
 	if err != nil {
 		log.Printf("Warning: MongoDB not available: %v", err)
 		userRepo = nil
@@ -30,13 +36,13 @@ func main() {
 	}
 
 	// Inicializar serviços externos
-	extServices := services.NewExternalServices()
+	extServices := services.NewExternalServices(&cfg.ExternalAPIs)
 
 	// Inicializar use case
 	userUseCase := usecases.NewUserUseCase(userRepo, extServices)
 
 	// Inicializar RabbitMQ
-	rabbitMQService, err := rabbitmq.NewRabbitMQService(rabbitMQURL, userUseCase)
+	rabbitMQService, err := rabbitmq.NewRabbitMQService(cfg.RabbitMQ.URI, userUseCase)
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
@@ -57,8 +63,9 @@ func main() {
 	api.SetupRoutes(router, userHandler)
 
 	// Iniciar servidor
-	log.Println("Server starting on :8080")
-	if err := router.Run(":8080"); err != nil {
+	serverPort := cfg.Server.Port
+	log.Printf("Server starting on %s", serverPort)
+	if err := router.Run(":" + serverPort); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

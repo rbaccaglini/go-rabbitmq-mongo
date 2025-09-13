@@ -49,11 +49,11 @@ func (uc *userUseCase) ProcessUser(ctx context.Context, userData entities.UserDa
 	}
 
 	processedUser := &entities.ProcessedUser{
-		UserData:      userData,
-		DocumentValid: isValid,
-		Address:       *address,
-		Status:        "processed",
-		Message:       "User processed successfully",
+		Name:     userData.Name,
+		Document: entities.DocumentUserProcessed{DocumentNumber: userData.DocumentNumber, IsValid: isValid},
+		Address:  *address,
+		Status:   "processed",
+		Message:  "User processed successfully",
 	}
 
 	// Salvar no repositório
