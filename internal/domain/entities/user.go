@@ -24,11 +24,16 @@ type AddressResponse struct {
 }
 
 type ProcessedUser struct {
-	ID            primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	UserData      UserData           `json:"user_data" bson:"user_data"`
-	DocumentValid bool               `json:"document_valid" bson:"document_valid"`
-	Address       AddressResponse    `json:"address" bson:"address"`
-	Status        string             `json:"status" bson:"status"`
-	Message       string             `json:"message" bson:"message"`
-	CreatedAt     time.Time          `json:"created_at" bson:"created_at"`
+	ID        primitive.ObjectID    `json:"id,omitempty" bson:"_id,omitempty"`
+	Name      string                `json:"name" bson:"name"`
+	Document  DocumentUserProcessed `json:"document" bson:"document"`
+	Address   AddressResponse       `json:"address" bson:"address"`
+	Status    string                `json:"status" bson:"status"`
+	Message   string                `json:"message" bson:"message"`
+	CreatedAt time.Time             `json:"created_at" bson:"created_at"`
+}
+
+type DocumentUserProcessed struct {
+	DocumentNumber string `json:"document_number" bson:"document_number"`
+	IsValid        bool   `json:"is_valid" bson:"is_valid"`
 }

@@ -6,25 +6,27 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"api-rabbitmq/internal/domain/entities"
+	"api-rabbitmq/internal/infrastructure/config"
 )
 
 type ExternalServicesImpl struct {
 	httpClient *http.Client
+	config     *config.ExternalAPIsConfig
 }
 
-func NewExternalServices() *ExternalServicesImpl {
+func NewExternalServices(cfg *config.ExternalAPIsConfig) *ExternalServicesImpl {
 	return &ExternalServicesImpl{
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: cfg.Timeout,
 		},
+		config: cfg,
 	}
 }
 
 func (s *ExternalServicesImpl) ValidateDocument(documentNumber string) (bool, error) {
-	url := fmt.Sprintf("http://localhost:8082/api/v1/is-document-valid/%s", documentNumber)
+	url := fmt.Sprintf("%s/%s", s.config.DocumentValidationURL, documentNumber)
 
 	resp, err := s.httpClient.Get(url)
 	if err != nil {
@@ -56,7 +58,7 @@ func (s *ExternalServicesImpl) GetAddress(zipCode string) (*entities.AddressResp
 		return nil, fmt.Errorf("invalid zip code: %v", err)
 	}
 
-	url := fmt.Sprintf("http://localhost:8081/api/v1/address/%d", zipCodeInt)
+	url := fmt.Sprintf("%s/%d", s.config.AddressServiceURL, zipCodeInt)
 
 	resp, err := s.httpClient.Get(url)
 	if err != nil {
