@@ -1,0 +1,24 @@
+# Binários compilados
+bin/
+dist/
+
+# Arquivos executáveis
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Arquivos de teste compilados
+*.test
+
+# Arquivos de saída do compilador
+*.out
+
+# Diretório de dependências vendored (se usado)
+vendor/
+
+# Cache do Go
+go.sum
+
+.idea/
