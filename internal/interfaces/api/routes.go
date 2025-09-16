@@ -10,10 +10,14 @@ func SetupRoutes(router *gin.Engine, userHandler *handlers.UserHandler) {
 	// Health check
 	router.GET("/health", userHandler.HealthCheck)
 
-	// User routes
-	userGroup := router.Group("/api/v1/users")
+	// API v1
+	v1 := router.Group("/api/v1")
 	{
-		userGroup.POST("/publish", userHandler.PublishUser)
-		userGroup.GET("/processed", userHandler.GetProcessedUsers)
+		// Users
+		users := v1.Group("/users")
+		{
+			users.POST("/publish", userHandler.PublishUser)
+			users.GET("/processed", userHandler.GetProcessedUsers)
+		}
 	}
 }

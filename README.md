@@ -1,13 +1,3 @@
-api-rabbitmq/
-├── main.go
-├── go.mod
-├── models/
-│   └── models.go
-├── services/
-│   └── rabbitmq_service.go
-└── handlers/
-    └── message_handler.go
-
 ### RabbitMQ message model:
 ```json
 {

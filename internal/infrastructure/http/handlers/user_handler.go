@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"api-rabbitmq/internal/infrastructure/messagebroker/rabbitmq"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"api-rabbitmq/internal/application/usecases"
 	"api-rabbitmq/internal/domain/entities"
+	"api-rabbitmq/internal/infrastructure/messagebroker/rabbitmq"
 )
 
 type UserHandler struct {
