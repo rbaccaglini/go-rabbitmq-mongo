@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	"api-rabbitmq/internal/domain/entities"
 	"api-rabbitmq/internal/domain/repositories"
@@ -36,16 +37,31 @@ func NewUserUseCase(userRepo repositories.UserRepository, extServices ExternalSe
 func (uc *userUseCase) ProcessUser(ctx context.Context, userData entities.UserData) (*entities.ProcessedUser, error) {
 	log.Printf("Processing user: %s, document: %s", userData.Name, userData.DocumentNumber)
 
+	var wg sync.WaitGroup
+	var isValid bool
+	var errAddr, errDoc error
+	var address *entities.AddressResponse
+
 	// Validar documento
-	isValid, err := uc.extServices.ValidateDocument(userData.DocumentNumber)
-	if err != nil {
-		return nil, fmt.Errorf("document validation failed: %v", err)
-	}
+	wg.Add(1)
+	go func() {
+		isValid, errDoc = uc.extServices.ValidateDocument(userData.DocumentNumber)
+	}()
 
 	// Buscar endereço
-	address, err := uc.extServices.GetAddress(userData.ZipCode)
-	if err != nil {
-		return nil, fmt.Errorf("address lookup failed: %v", err)
+	wg.Add(1)
+	go func() {
+		address, errAddr = uc.extServices.GetAddress(userData.ZipCode)
+	}()
+
+	wg.Wait()
+
+	if errDoc != nil {
+		return nil, fmt.Errorf("document validation failed: %v", errDoc)
+	}
+
+	if errAddr != nil {
+		return nil, fmt.Errorf("address lookup failed: %v", errAddr)
 	}
 
 	processedUser := &entities.ProcessedUser{
